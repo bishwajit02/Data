@@ -16,7 +16,16 @@ def merge_csv_files():
         # Read all CSVs and merge them
         dataframes = [pd.read_csv(file) for file in file_paths]
         merged_df = pd.concat(dataframes, ignore_index=True)  # Combine & reset index
-        messagebox.showinfo("Success", f"{len(file_paths)} files merged successfully! Click 'Save CSV'.")
+
+        # Check if "target_classification" exists
+        if "target_classification" in merged_df.columns:
+            unique_classes = merged_df["target_classification"].dropna().unique()
+            class_mapping = {cls: idx for idx, cls in enumerate(sorted(unique_classes))}
+
+            # Add a new column with the assigned numbers
+            merged_df["classification_id"] = merged_df["target_classification"].map(class_mapping)
+        
+        messagebox.showinfo("Success", f"{len(file_paths)} files merged! Click 'Save CSV'.")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to merge files:\n{e}")
 
@@ -29,13 +38,13 @@ def save_merged_file():
     save_path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV Files", "*.csv")])
     if save_path:
         merged_df.to_csv(save_path, index=False)
-        messagebox.showinfo("Success", f"Merged file saved successfully to:\n{save_path}")
+        messagebox.showinfo("Success", f"Merged file saved to:\n{save_path}")
     else:
         messagebox.showerror("Error", "No file name specified!")
 
 # Tkinter GUI Setup
 root = tk.Tk()
-root.title("CSV Merger")
+root.title("CSV Merger with Classification ID")
 root.geometry("500x350")
 root.config(bg="#2C3E50")  
 
@@ -52,7 +61,7 @@ button_style = {
 }
 
 # Title Label
-title_label = tk.Label(root, text="CSV Merger Tool", font=("Arial", 18, "bold"), fg="white", bg="#2C3E50")
+title_label = tk.Label(root, text="CSV Merger & Classifier", font=("Arial", 18, "bold"), fg="white", bg="#2C3E50")
 title_label.pack(pady=15)
 
 # Button Frame

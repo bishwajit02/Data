@@ -81,11 +81,16 @@ def filter_csv():
     if data_type == "Both":
         user_choice = messagebox.askquestion("Choose Filter", "Both data types detected. Do you want to apply Type 1 filter?\n(Select 'No' for Type 2)")
         data_type = "Type 1" if user_choice == "yes" else "Type 2"
-    
+
     if data_type == "Type 1":
         selected_features = important_features_type1
         if "target_classification" in cleaned_df.columns:
+            # Drop rows where target_classification is missing
             cleaned_df = cleaned_df.dropna(subset=["target_classification"])
+            
+            # Normalize target_classification by replacing ';' and spaces with '_'
+            cleaned_df.loc[:, "target_classification"] = cleaned_df["target_classification"].str.replace(r"[; ]+", "_", regex=True)
+    
     elif data_type == "Type 2":
         selected_features = important_features_type2
     else:
@@ -93,11 +98,18 @@ def filter_csv():
         return
 
     try:
-        filtered_df = cleaned_df[[col for col in selected_features if col in cleaned_df.columns]]
+        filtered_columns = [col for col in selected_features if col in cleaned_df.columns]
+        if not filtered_columns:
+            messagebox.showerror("Error", "No matching columns found in dataset!")
+            return
+
+        filtered_df = cleaned_df[filtered_columns]
         filtered_df = filtered_df.dropna(axis=1, how="all")
         messagebox.showinfo("Success", f"Data filtered using {data_type} filter! Click 'Save CSV' to download.")
     except Exception as e:
         messagebox.showerror("Error", f"Filtering failed:\n{e}")
+
+
         
 def save_file():
     global filtered_df
