@@ -99,3 +99,21 @@ with torch.no_grad():
 
 accuracy = correct / total
 print(f"Test Accuracy: {accuracy * 100:.2f}%")
+
+actual_class_ids = []
+predicted_class_ids = []
+
+# Evaluate Model
+with torch.no_grad():
+    for X_batch, y_batch in test_loader:
+        y_pred = model(X_batch)
+        predicted_classes = torch.argmax(y_pred, dim=1)  # Get predicted indices
+
+        actual_class_ids.extend(y_batch.numpy())         # Actual classification_id
+        predicted_class_ids.extend(predicted_classes.numpy())  # Predicted classification_id
+
+# Display Results
+print(f"\n{'Sample':<8}{'Actual ID':<12}{'Predicted ID':<12}")
+print("=" * 35)
+for i in range(10):  # Show first 10 samples for better visualization
+    print(f"{i+1:<8}{actual_class_ids[i]:<12}{predicted_class_ids[i]:<12}")
