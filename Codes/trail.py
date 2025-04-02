@@ -1,79 +1,81 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
+from torch.utils.data import DataLoader, TensorDataset
 
-
-class Astro(nn.Module):
-  def __init__(self, in_features=5, h1=10, h2=12, out_features=139):
-    super().__init__()
-    self.fc1 = nn.Linear(in_features, h1)
-    self.fc2 = nn.Linear(h1, h2)
-    self.out = nn.Linear(h2, out_features)
-
-  def forward(self, x):
-    x = F.relu(self.fc1(x))
-    x = F.relu(self.fc2(x))
-    x = self.out(x)
-
-    return x
-
-torch.manual_seed(42)
-model = Astro()
-
-url = r"G:\Bishwajit\Dataset\data\Dataset\w.csv"
+# 🔹 Load Data
+url = r"G:\Bishwajit\Dataset\data\Dataset\p.csv"
 df = pd.read_csv(url)
 
+# Drop unwanted columns
 columns_to_drop = ['target_name', 'target_classification']
 df = df.drop(columns=columns_to_drop)
 
-X = df.drop('classification_id', axis=1)
-y = df['classification_id']
+# 🔹 Encode labels correctly (Ensure 0-based indexing)
+df['classification_id'], _ = pd.factorize(df['classification_id'])
 
-X = X.values
-y = y.values
+# Define features and target
+X = df.drop('classification_id', axis=1).values
+y = df['classification_id'].values
 
+# 🔹 Train-test split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+# Convert to PyTorch tensors
 X_train = torch.FloatTensor(X_train)
 X_test = torch.FloatTensor(X_test)
+y_train = torch.LongTensor(y_train)
+y_test = torch.LongTensor(y_test)
 
-y_train = torch.LongTensor(y_train).squeeze()  # Shift to zero-indexing
-y_test = torch.LongTensor(y_test).squeeze() 
-# Ensure labels start from 0
-y_train = y_train - y_train.min()
-y_test = y_test - y_test.min()
+# 🔹 Ensure labels are in the correct range
+num_classes = len(set(y_train.tolist()))
+print(f"Number of unique classes: {num_classes}")
 
+# 🔹 Check if labels are within the expected range
+assert y_train.min() == 0, "Error: y_train should start at 0"
+assert y_train.max() == num_classes - 1, f"Error: y_train max should be {num_classes - 1}, but got {y_train.max()}"
 
-print("Unique y_train values after shifting:", y_train.unique())
+# 🔹 Define Neural Network using Sequential API
+class Astro(nn.Module):
+    def __init__(self, input_dim, hidden1=10, hidden2=12, output_dim=139):
+        super(Astro, self).__init__()
+        self.network = nn.Sequential(
+            nn.Linear(input_dim, hidden1),
+            nn.ReLU(),
+            nn.Linear(hidden1, hidden2),
+            nn.ReLU(),
+            nn.Linear(hidden2, output_dim)
+        )
 
+    def forward(self, x):
+        return self.network(x)  # No activation for logits
+
+# Initialize model
+model = Astro(input_dim=X_train.shape[1], output_dim=num_classes)
+
+# Define loss and optimizer
 criterion = nn.CrossEntropyLoss()
-
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-epochs = 100
-losses = []
+# 🔹 Mini-batch training setup
+batch_size = 64
+train_data = TensorDataset(X_train, y_train)
+train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
 
-for i in range(epochs):
-    # Forward pass: compute predicted y by passing X to the model
-    y_pred = model(X_train)  # Model forward pass
-
-    # Check the shape of y_pred and y_train
-    print(f"y_pred shape: {y_pred.shape}")  # Should be (batch_size, 139)
-    print(f"y_train shape: {y_train.shape}")  # Should be (batch_size,)
-
-    # Compute the loss
-    loss = criterion(y_pred, y_train)
-    losses.append(loss.detach().numpy())
+# 🔹 Training loop
+epochs = 50
+for epoch in range(epochs):
+    for batch_X, batch_y in train_loader:
+        optimizer.zero_grad()
+        y_pred = model(batch_X)
+        loss = criterion(y_pred, batch_y)
+        loss.backward()
+        optimizer.step()
 
     # Print loss every 10 epochs
-    if i % 10 == 0:
-        print(f'Epoch: {i} | Loss: {loss.item()}')
+    if epoch % 10 == 0 or epoch == epochs - 1:
+        print(f"Epoch {epoch+1}/{epochs} | Loss: {loss.item():.4f}")
 
-    # Zero gradients, backpropagate, and update weights
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
+print("✅ Training complete")

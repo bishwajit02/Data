@@ -19,12 +19,15 @@ def merge_csv_files():
 
         # Check if "target_classification" exists
         if "target_classification" in merged_df.columns:
-            unique_classes = merged_df["target_classification"].dropna().unique()
-            class_mapping = {cls: idx for idx, cls in enumerate(sorted(unique_classes))}
+            unique_classes = sorted(merged_df["target_classification"].dropna().unique())
+            class_mapping = {cls: idx for idx, cls in enumerate(unique_classes)}  # Ensure sequential mapping
 
-            # Add a new column with the assigned numbers
+            # Map target classifications to classification_id
             merged_df["classification_id"] = merged_df["target_classification"].map(class_mapping)
-        
+            
+            # Ensure classification_id is strictly sequential without gaps
+            merged_df["classification_id"] = pd.factorize(merged_df["classification_id"])[0]
+
         messagebox.showinfo("Success", f"{len(file_paths)} files merged! Click 'Save CSV'.")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to merge files:\n{e}")
@@ -69,11 +72,11 @@ frame = tk.Frame(root, bg="#2C3E50")
 frame.pack(pady=10)
 
 # Merge Button
-btn_merge = tk.Button(frame, text="📂 Merge CSVs", command=merge_csv_files, **button_style)
+btn_merge = tk.Button(frame, text="\ud83d\udcc2 Merge CSVs", command=merge_csv_files, **button_style)
 btn_merge.grid(row=0, column=0, pady=5)
 
 # Save Button
-btn_save = tk.Button(frame, text="💾 Save Merged CSV", command=save_merged_file, **button_style)
+btn_save = tk.Button(frame, text="\ud83d\udcbe Save Merged CSV", command=save_merged_file, **button_style)
 btn_save.grid(row=1, column=0, pady=5)
 
 root.mainloop()
