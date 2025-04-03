@@ -36,10 +36,10 @@ class Model(nn.Module):
 
 url = None
 if is_cloud:
-    csv_url = st.text_input("Enter CSV URL", placeholder="Required for cloud deployment")
-    if csv_url:
+    url = st.text_input("Enter CSV URL", placeholder="Required for cloud deployment")
+    if url:
         try:
-            df = pd.read_csv(csv_url)
+            df = pd.read_csv(url)
         except Exception as e:
             st.error(f"Failed to load CSV: {e}")
             st.stop()
