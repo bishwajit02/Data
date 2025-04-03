@@ -34,7 +34,7 @@ class Model(nn.Module):
         x = self.bn3(F.relu(self.fc3(x)))
         return self.out(x)
 
-csv_url = None
+url = None
 if is_cloud:
     csv_url = st.text_input("Enter CSV URL", placeholder="Required for cloud deployment")
     if csv_url:
