@@ -34,6 +34,22 @@ class Model(nn.Module):
         x = self.bn3(F.relu(self.fc3(x)))
         return self.out(x)
 
+csv_url = None
+if is_cloud:
+    csv_url = st.text_input("Enter CSV URL", placeholder="Required for cloud deployment")
+    if csv_url:
+        try:
+            df = pd.read_csv(csv_url)
+        except Exception as e:
+            st.error(f"Failed to load CSV: {e}")
+            st.stop()
+    else:
+        st.warning("Please enter a valid CSV URL to proceed.")
+        st.stop()
+else:
+    # Local file path
+    url = r"G:\Bishwajit\Dataset\data\Dataset\p.csv"
+
 # Streamlit UI
 st.title("Neural Network Trainer")
 st.sidebar.header("Model Parameters")
@@ -46,7 +62,7 @@ epochs = st.sidebar.number_input("Input Iteration Number", min_value=0, max_valu
 
 if st.button("Run Model"):
     # Load Data
-    url = r"G:\Bishwajit\Dataset\data\Dataset\p.csv"  
+    # url = r"G:\Bishwajit\Dataset\data\Dataset\p.csv"  
     df = pd.read_csv(url)
     df.drop(columns=['target_name', 'target_classification'], inplace=True)
     X = df.drop('classification_id', axis=1).values
