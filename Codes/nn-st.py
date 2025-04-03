@@ -33,7 +33,7 @@ class Model(nn.Module):
         x = self.bn2(F.relu(self.fc2(x)))
         x = self.bn3(F.relu(self.fc3(x)))
         return self.out(x)
-
+is_cloud = "STREAMLIT_SERVER_PORT" in os.environ
 url = None
 if is_cloud:
     url = st.text_input("Enter CSV URL", placeholder="Required for cloud deployment")
